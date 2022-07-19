@@ -52,7 +52,9 @@ const createFiles = async () => {
           if (writeTo.includes("\\")) {
             const temp = writeTo.split("\\");
             temp
-              .filter((folder) => !folder.endsWith(".ts"))
+              .filter(
+                (folder) => !folder.endsWith(".json") && !folder.endsWith(".ts")
+              )
               .map((folder) => {
                 fs.mkdirSync(path.join(process.cwd(), settings.outDir, folder));
               });

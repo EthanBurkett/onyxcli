@@ -1,4 +1,4 @@
-#!/env/node
+#!/usr/bin/env node
 import path from "path";
 import fs from "fs";
 import inquirer from "inquirer";

@@ -3,5 +3,7 @@ This package installs all packages necessary for [Onyx Library](https://www.npmj
 # Usage
 
 ```sh
-onyxcli
+npm i -g onyxcli
 ```
+
+`onyxcli`

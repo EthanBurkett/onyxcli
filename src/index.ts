@@ -5,6 +5,8 @@ import inquirer from "inquirer";
 const loadingSpinner = require("loading-spinner");
 import chalk from "chalk";
 import { exec } from "child_process";
+import ora from "ora";
+import logUpdate from "log-update";
 const settings: {
   outDir: string;
 } = {
@@ -72,23 +74,25 @@ const createFiles = async () => {
     });
   });
 };
-
-const installPackages = async () => {
+const installPackages = async (dir: string) => {
   new Promise((resolve, reject) => {
-    exec(`cd ${process.cwd()}`, (err, stdout) => {
-      if (err) return reject(err);
+    const spinner = ora({
+      text: "Installing packages...",
+      interval: 100,
     });
     exec(
-      `npm i onyxlibrary typeorm type-graphql graphql reflect-metadata`,
+      `cd ${process.cwd()}\\${dir}&&npm init -y&&npm i onyxlibrary typeorm type-graphql graphql reflect-metadata&&npm i -D @types/graphql`,
       (err, stdout) => {
         if (err) return reject(err);
       }
-    );
-    exec(`npm i -D @types/graphql`, (err, stdout) => {
-      if (err) return reject(err);
-    });
-
-    resolve("success");
+    )
+      .addListener("spawn", () => {
+        spinner.start();
+      })
+      .addListener("exit", () => {
+        spinner.stop();
+        console.log(chalk.greenBright.bold("✓ Packages installed"));
+      });
   });
 };
 
@@ -103,17 +107,8 @@ inquirer
   .then(async ({ dir }) => {
     fs.mkdirSync(path.join(process.cwd(), dir));
     settings.outDir = dir;
-    console.log(chalk.magentaBright.bold("Installing packages..."));
-    loadingSpinner.start(100, {
-      clearChar: true,
-    });
-    await installPackages()
-      .catch((e) => console.error)
-      .then(() => {
-        console.log(chalk.greenBright.bold("✓ Packages installed"));
-        loadingSpinner.stop();
-      });
-    await createFiles()
+    installPackages(dir).catch((e) => console.error);
+    createFiles()
       .then(() => {})
       .catch((e) => {
         throw new Error(e);

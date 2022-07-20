@@ -10,13 +10,19 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/chalk-animation": "^1.6.1",
     "@types/glob": "^7.2.0",
     "chalk": "4.1.2",
+    "chalk-animation": "^2.0.2",
+    "cli-spinners": "^2.6.1",
     "glob": "^8.0.3",
     "inquirer": "8.2.4",
-    "loading-spinner": "^1.2.1"
+    "loading-spinner": "^1.2.1",
+    "log-update": "^4",
+    "ora": "^5.4.1"
   },
   "devDependencies": {
+    "@types/graphql": "^14.5.0",
     "@types/inquirer": "7.3.3"
   },
   "bin": "./dist/index.js"

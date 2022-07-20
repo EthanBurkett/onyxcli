@@ -2,9 +2,9 @@
 import path from "path";
 import fs from "fs";
 import inquirer from "inquirer";
-import { stdout } from "process";
+const loadingSpinner = require("loading-spinner");
 import chalk from "chalk";
-
+import { exec } from "child_process";
 const settings: {
   outDir: string;
 } = {
@@ -73,6 +73,25 @@ const createFiles = async () => {
   });
 };
 
+const installPackages = async () => {
+  new Promise((resolve, reject) => {
+    exec(`cd ${process.cwd()}`, (err, stdout) => {
+      if (err) return reject(err);
+    });
+    exec(
+      `npm i onyxlibrary typeorm type-graphql graphql reflect-metadata`,
+      (err, stdout) => {
+        if (err) return reject(err);
+      }
+    );
+    exec(`npm i -D @types/graphql`, (err, stdout) => {
+      if (err) return reject(err);
+    });
+
+    resolve("success");
+  });
+};
+
 inquirer
   .prompt([
     {
@@ -84,6 +103,16 @@ inquirer
   .then(async ({ dir }) => {
     fs.mkdirSync(path.join(process.cwd(), dir));
     settings.outDir = dir;
+    console.log(chalk.magentaBright.bold("Installing packages..."));
+    loadingSpinner.start(100, {
+      clearChar: true,
+    });
+    await installPackages()
+      .catch((e) => console.error)
+      .then(() => {
+        console.log(chalk.greenBright.bold("✓ Packages installed"));
+        loadingSpinner.stop();
+      });
     await createFiles()
       .then(() => {})
       .catch((e) => {

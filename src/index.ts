@@ -97,7 +97,13 @@ const createWebFiles = async () => {
             const temp = writeTo.split("\\");
             temp
               .filter(
-                (folder) => !folder.endsWith(".json") && !folder.endsWith(".ts")
+                (folder) =>
+                  !folder.endsWith(".json") &&
+                  !folder.endsWith(".ts") &&
+                  !folder.endsWith(".tsx") &&
+                  !folder.endsWith(".js") &&
+                  !folder.endsWith(".svg") &&
+                  !folder.endsWith(".css")
               )
               .map((folder) => {
                 fs.mkdirSync(
@@ -134,6 +140,7 @@ const installPackages = async (dir: string) => {
       })
       .addListener("exit", () => {
         spinner.stop();
+        resolve("success");
         console.log(chalk.greenBright.bold("✓ Core Packages installed"));
       });
   });
@@ -152,6 +159,7 @@ const installDashboardPackages = async (dir: string) => {
       })
       .addListener("exit", () => {
         spinner.stop();
+        resolve("success");
         console.log(chalk.greenBright.bold("✓ Dashboard Packages installed"));
       });
   });
@@ -180,23 +188,32 @@ inquirer
     },
   ])
   .then(async ({ dir, webdir, webconfirm }) => {
-    fs.mkdirSync(path.join(process.cwd(), dir));
+    fs.mkdirSync(path.join(process.cwd(), dir), {
+      recursive: true,
+    });
     settings.outDir = dir;
     settings.webOutDir = webdir;
+
     if (webconfirm === true) {
-      settings.doWeb = true;
-      fs.mkdirSync(path.join(process.cwd(), webdir));
+      fs.mkdirSync(path.join(process.cwd(), webdir), {
+        recursive: true,
+      });
       createWebFiles()
         .then(() => {})
         .catch((e) => {
           throw new Error(e);
         });
-      installDashboardPackages(webdir);
     }
+
     createBotFiles()
       .then(() => {})
       .catch((e) => {
         throw new Error(e);
       });
-    installPackages(dir).catch((e) => console.error);
+    installPackages(dir)
+      .then((value: any) => {
+        if (value == "success" && webconfirm === true)
+          installDashboardPackages(webdir).catch((e) => console.error);
+      })
+      .catch((e) => console.error);
   });

@@ -92,7 +92,12 @@ const createWebFiles = async () => {
                     if (writeTo.includes("\\")) {
                         const temp = writeTo.split("\\");
                         temp
-                            .filter((folder) => !folder.endsWith(".json") && !folder.endsWith(".ts"))
+                            .filter((folder) => !folder.endsWith(".json") &&
+                            !folder.endsWith(".ts") &&
+                            !folder.endsWith(".tsx") &&
+                            !folder.endsWith(".js") &&
+                            !folder.endsWith(".svg") &&
+                            !folder.endsWith(".css"))
                             .map((folder) => {
                             fs_1.default.mkdirSync(path_1.default.join(process.cwd(), settings.webOutDir, folder));
                         });
@@ -122,6 +127,7 @@ const installPackages = async (dir) => {
         })
             .addListener("exit", () => {
             spinner.stop();
+            resolve("success");
             console.log(chalk_1.default.greenBright.bold("✓ Core Packages installed"));
         });
     });
@@ -141,6 +147,7 @@ const installDashboardPackages = async (dir) => {
         })
             .addListener("exit", () => {
             spinner.stop();
+            resolve("success");
             console.log(chalk_1.default.greenBright.bold("✓ Dashboard Packages installed"));
         });
     });
@@ -168,24 +175,31 @@ inquirer_1.default
     },
 ])
     .then(async ({ dir, webdir, webconfirm }) => {
-    fs_1.default.mkdirSync(path_1.default.join(process.cwd(), dir));
+    fs_1.default.mkdirSync(path_1.default.join(process.cwd(), dir), {
+        recursive: true,
+    });
     settings.outDir = dir;
     settings.webOutDir = webdir;
     if (webconfirm === true) {
-        settings.doWeb = true;
-        fs_1.default.mkdirSync(path_1.default.join(process.cwd(), webdir));
+        fs_1.default.mkdirSync(path_1.default.join(process.cwd(), webdir), {
+            recursive: true,
+        });
         createWebFiles()
             .then(() => { })
             .catch((e) => {
             throw new Error(e);
         });
-        installDashboardPackages(webdir);
     }
     createBotFiles()
         .then(() => { })
         .catch((e) => {
         throw new Error(e);
     });
-    installPackages(dir).catch((e) => console.error);
+    installPackages(dir)
+        .then((value) => {
+        if (value == "success" && webconfirm === true)
+            installDashboardPackages(webdir).catch((e) => console.error);
+    })
+        .catch((e) => console.error);
 });
 //# sourceMappingURL=index.js.map

@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  li {
+    @apply list-none;
+  }
+  a,
+  h1,
+  h2,
+  button {
+    font-family: "Raleway";
+  }
+}

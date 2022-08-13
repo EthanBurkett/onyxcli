@@ -9,8 +9,12 @@ import ora from "ora";
 import logUpdate from "log-update";
 const settings: {
   outDir: string;
+  webOutDir: string;
+  doWeb: boolean;
 } = {
   outDir: path.join(process.cwd(), "my-project"),
+  webOutDir: path.join(process.cwd(), "client"),
+  doWeb: false,
 };
 
 var walk = function (dir, done) {
@@ -37,7 +41,7 @@ var walk = function (dir, done) {
   });
 };
 
-const createFiles = async () => {
+const createBotFiles = async () => {
   new Promise((resolve, reject) => {
     walk(path.join(__dirname, "read"), (err, files: string[]) => {
       const writeTo = files.map((file) => {
@@ -74,6 +78,45 @@ const createFiles = async () => {
     });
   });
 };
+const createWebFiles = async () => {
+  new Promise((resolve, reject) => {
+    walk(path.join(__dirname, "read-web"), (err, files: string[]) => {
+      const writeTo = files.map((file) => {
+        const fileSplit = file.split("\\");
+        const indexOfRead = fileSplit.indexOf("read-web");
+        return {
+          Path: file,
+          writeTo: fileSplit.slice(indexOfRead + 1).join("\\"),
+        };
+      });
+
+      writeTo.map(({ writeTo, Path }) => {
+        let fileData = fs.readFileSync(Path).toString();
+        try {
+          if (writeTo.includes("\\")) {
+            const temp = writeTo.split("\\");
+            temp
+              .filter(
+                (folder) => !folder.endsWith(".json") && !folder.endsWith(".ts")
+              )
+              .map((folder) => {
+                fs.mkdirSync(
+                  path.join(process.cwd(), settings.webOutDir, folder)
+                );
+              });
+          }
+          fs.writeFileSync(
+            path.join(process.cwd(), settings.webOutDir, writeTo),
+            fileData
+          );
+          resolve("success");
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
+  });
+};
 const installPackages = async (dir: string) => {
   new Promise((resolve, reject) => {
     const spinner = ora({
@@ -91,7 +134,25 @@ const installPackages = async (dir: string) => {
       })
       .addListener("exit", () => {
         spinner.stop();
-        console.log(chalk.greenBright.bold("✓ Packages installed"));
+        console.log(chalk.greenBright.bold("✓ Core Packages installed"));
+      });
+  });
+};
+const installDashboardPackages = async (dir: string) => {
+  new Promise((resolve, reject) => {
+    const spinner = ora({
+      text: "Installing dashboard packages...",
+      interval: 100,
+    });
+    exec(`cd ${process.cwd()}\\${dir}&&npm i`, (err, stdout) => {
+      if (err) return reject(err);
+    })
+      .addListener("spawn", () => {
+        spinner.start();
+      })
+      .addListener("exit", () => {
+        spinner.stop();
+        console.log(chalk.greenBright.bold("✓ Dashboard Packages installed"));
       });
   });
 };
@@ -103,14 +164,39 @@ inquirer
       message: "Choose where the project will be created",
       default: "my-project",
     },
+    {
+      name: "webconfirm",
+      message: "Create dashboard files?",
+      type: "confirm",
+      default: false,
+    },
+    {
+      name: "webdir",
+      message: "Choose where the dashboard files will be created",
+      default: "client",
+      when({ webconfirm }) {
+        return webconfirm === true;
+      },
+    },
   ])
-  .then(async ({ dir }) => {
+  .then(async ({ dir, webdir, webconfirm }) => {
     fs.mkdirSync(path.join(process.cwd(), dir));
     settings.outDir = dir;
-    installPackages(dir).catch((e) => console.error);
-    createFiles()
+    settings.webOutDir = webdir;
+    if (webconfirm === true) {
+      settings.doWeb = true;
+      fs.mkdirSync(path.join(process.cwd(), webdir));
+      createWebFiles()
+        .then(() => {})
+        .catch((e) => {
+          throw new Error(e);
+        });
+      installDashboardPackages(webdir);
+    }
+    createBotFiles()
       .then(() => {})
       .catch((e) => {
         throw new Error(e);
       });
+    installPackages(dir).catch((e) => console.error);
   });

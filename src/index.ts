@@ -151,9 +151,12 @@ const installDashboardPackages = async (dir: string) => {
       text: "Installing dashboard packages...",
       interval: 100,
     });
-    exec(`cd ${process.cwd()}\\${dir}&&npm i`, (err, stdout) => {
-      if (err) return reject(err);
-    })
+    exec(
+      `cd ${process.cwd()}\\${dir}&&npm i -D typescript&&npm i`,
+      (err, stdout) => {
+        if (err) return reject(err);
+      }
+    )
       .addListener("spawn", () => {
         spinner.start();
       })
